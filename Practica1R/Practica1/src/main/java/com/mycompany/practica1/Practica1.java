@@ -6,7 +6,7 @@ import javax.swing.*;
 
 public class Practica1 extends JFrame implements ActionListener {
 
-    JButton BtnSubir, BtnDescargar, BtnEliminar, BtnRenombrar, BtnCrearArch, BtnCrearCarp, BtnCopiar, BtnPegar, BtnActualizar;
+    JButton BtnSubir, BtnDescargar, BtnEliminar, BtnRenombrar, BtnCrearArch, BtnCrearCarp, BtnCopiar, BtnActualizar;
     static JList<String> archivos;
     static DefaultListModel<String> modelo;
     MouseListener mouseListener;
@@ -87,12 +87,9 @@ public class Practica1 extends JFrame implements ActionListener {
         BtnCrearCarp = new JButton("Crear carpeta");
         BtnCrearCarp.setBackground(new Color(66, 133, 244));
         BtnCrearCarp.setForeground(Color.WHITE);
-        BtnCopiar = new JButton("Copiar");
+        BtnCopiar = new JButton("Copiar Archivo");
         BtnCopiar.setBackground(new Color(66, 133, 244));
         BtnCopiar.setForeground(Color.WHITE);
-        BtnPegar = new JButton("Pegar");
-        BtnPegar.setBackground(new Color(66, 133, 244));
-        BtnPegar.setForeground(Color.WHITE);
         BtnActualizar = new JButton("<- Regresar");
         BtnActualizar.setBackground(Color.BLACK);
         BtnActualizar.setForeground(Color.WHITE);
@@ -106,7 +103,6 @@ public class Practica1 extends JFrame implements ActionListener {
         panelBotonesSuperior.add(BtnEliminar);
         panelBotonesSuperior.add(BtnRenombrar);
         panelBotonesSuperior.add(BtnCopiar);
-        panelBotonesSuperior.add(BtnPegar);
         panelBotonesSuperior.add(BtnActualizar);
 
 
@@ -121,8 +117,6 @@ public class Practica1 extends JFrame implements ActionListener {
         BtnCrearArch.addActionListener(this);
         BtnCrearCarp.addActionListener(this);
         BtnCopiar.addActionListener(this);
-        BtnPegar.addActionListener(this);
-
     }
 
     public void actionPerformed(ActionEvent e) {

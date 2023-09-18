@@ -347,12 +347,25 @@ public class Servidor {
             for (int i = 0; i < tam; i++) {
                 String nombreArchivo = nombreArchivos[i];
                 String rutaDestino = rutaServer + rutasDestino[i];
-
                 File archivoOrigen = new File(rutaServer + nombreArchivo);
-                File archivoDestino = new File(rutaDestino + sep + nombreArchivo);
 
                 if (archivoOrigen.exists()) {
                     if (archivoOrigen.isFile()) {
+                        // Verificar si el archivo de destino ya existe en la ruta
+                        int copiaIndex = 1;
+                        String nuevoNombreArchivo = nombreArchivo;
+                        File archivoDestino = new File(rutaDestino + sep + nuevoNombreArchivo);
+
+                        // Generar un nuevo nombre con el prefijo "Copia" si el archivo ya existe
+                        while (archivoDestino.exists()) {
+                            String nombreSinExtension = nombreArchivo.substring(0, nombreArchivo.lastIndexOf('.'));
+                            String extension = nombreArchivo.substring(nombreArchivo.lastIndexOf('.'));
+                            nuevoNombreArchivo = "Copia" + copiaIndex + "_" + nombreSinExtension + extension;
+                            copiaIndex++;
+                            archivoDestino = new File(rutaDestino + sep + nuevoNombreArchivo);
+                        }
+
+                        // Copiar el archivo con el nuevo nombre
                         FileInputStream fis = new FileInputStream(archivoOrigen);
                         FileOutputStream fos = new FileOutputStream(archivoDestino);
                         byte[] buffer = new byte[1024];
@@ -365,7 +378,7 @@ public class Servidor {
                         fis.close();
                         fos.close();
 
-                        System.out.println("Archivo " + nombreArchivo + " copiado a " + rutaDestino);
+                        System.out.println("Archivo " + nombreArchivo + " copiado como " + nuevoNombreArchivo + " a " + rutaDestino);
                     } else {
                         System.out.println(nombreArchivo + " no es un archivo y no puede copiarse.");
                     }
