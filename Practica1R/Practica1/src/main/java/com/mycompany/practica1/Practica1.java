@@ -4,10 +4,9 @@ import java.awt.event.*;
 import java.awt.*;
 import javax.swing.*;
 
-
 public class Practica1 extends JFrame implements ActionListener {
 
-    JButton BtnSubir, BtnDescargar, BtnEliminar,BtnRenombrar,BtnCrearArch,BtnCrearCarp,BtnActualizar;
+    JButton BtnSubir, BtnDescargar, BtnEliminar, BtnRenombrar, BtnCrearArch, BtnCrearCarp, BtnCopiar, BtnPegar, BtnActualizar;
     static JList<String> archivos;
     static DefaultListModel<String> modelo;
     MouseListener mouseListener;
@@ -20,7 +19,7 @@ public class Practica1 extends JFrame implements ActionListener {
         Container c = getContentPane();
         c.setLayout(new BorderLayout());
         c.setBackground(new Color(238, 238, 238));
-        
+
         // Crear un nuevo JPanel para los botones en la parte superior (norte)
         JPanel panelBotonesSuperior = new JPanel();
         panelBotonesSuperior.setBackground(Color.WHITE); // Establecer el fondo verde
@@ -88,11 +87,17 @@ public class Practica1 extends JFrame implements ActionListener {
         BtnCrearCarp = new JButton("Crear carpeta");
         BtnCrearCarp.setBackground(new Color(66, 133, 244));
         BtnCrearCarp.setForeground(Color.WHITE);
+        BtnCopiar = new JButton("Copiar");
+        BtnCopiar.setBackground(new Color(66, 133, 244));
+        BtnCopiar.setForeground(Color.WHITE);
+        BtnPegar = new JButton("Pegar");
+        BtnPegar.setBackground(new Color(66, 133, 244));
+        BtnPegar.setForeground(Color.WHITE);
         BtnActualizar = new JButton("<- Regresar");
         BtnActualizar.setBackground(Color.BLACK);
         BtnActualizar.setForeground(Color.WHITE);
         BtnActualizar.setPreferredSize(new Dimension(1, 40));
-        
+
         // Agregar los botones al panel en la parte superior (norte)
         panelBotonesSuperior.add(BtnSubir);
         panelBotonesSuperior.add(BtnDescargar);
@@ -100,7 +105,10 @@ public class Practica1 extends JFrame implements ActionListener {
         panelBotonesSuperior.add(BtnCrearCarp);
         panelBotonesSuperior.add(BtnEliminar);
         panelBotonesSuperior.add(BtnRenombrar);
+        panelBotonesSuperior.add(BtnCopiar);
+        panelBotonesSuperior.add(BtnPegar);
         panelBotonesSuperior.add(BtnActualizar);
+
 
         // Agregar el panel de botones en la parte superior (norte) del BorderLayout
         c.add(panelBotonesSuperior, BorderLayout.NORTH);
@@ -112,80 +120,82 @@ public class Practica1 extends JFrame implements ActionListener {
         BtnRenombrar.addActionListener(this);
         BtnCrearArch.addActionListener(this);
         BtnCrearCarp.addActionListener(this);
-        
-    }
-public void actionPerformed(ActionEvent e) {
-    JButton b = (JButton) e.getSource();
+        BtnCopiar.addActionListener(this);
+        BtnPegar.addActionListener(this);
 
-    if (b == BtnSubir) {
-        Cliente.SeleccionarArchivos();
     }
 
-    if (b == BtnActualizar) {
-        modelo.clear();
-        Cliente.Actualizar();
-    }
+    public void actionPerformed(ActionEvent e) {
+        JButton b = (JButton) e.getSource();
 
-    if (b == BtnDescargar) {
-        if (!archivos.isSelectionEmpty()) {
-            int[] indices = archivos.getSelectedIndices();
-            String[] nombreSeleccion = new String[indices.length];
+        if (b == BtnSubir) {
+            Cliente.SeleccionarArchivos();
+        }
 
-            for (int i = 0; i < indices.length; i++) {
-                System.out.println("El indice es: " + indices[i]);
-                nombreSeleccion[i] = modelo.getElementAt(indices[i]);
-                System.out.println("Nombre: " + nombreSeleccion[i]);
+        if (b == BtnActualizar) {
+            modelo.clear();
+            Cliente.Actualizar();
+        }
+
+        if (b == BtnDescargar) {
+            if (!archivos.isSelectionEmpty()) {
+                int[] indices = archivos.getSelectedIndices();
+                String[] nombreSeleccion = new String[indices.length];
+
+                for (int i = 0; i < indices.length; i++) {
+                    System.out.println("El indice es: " + indices[i]);
+                    nombreSeleccion[i] = modelo.getElementAt(indices[i]);
+                    System.out.println("Nombre: " + nombreSeleccion[i]);
+                }
+
+                Cliente.RecibirArchivos(nombreSeleccion, indices.length);
+            } else {
+                JOptionPane.showMessageDialog(null, "Seleccione archivos para descargarlos.");
             }
+        }
 
-            Cliente.RecibirArchivos(nombreSeleccion, indices.length);
-        } else {
-            JOptionPane.showMessageDialog(null, "Seleccione archivos para descargarlos.");
+        if (b == BtnEliminar) {
+            if (!archivos.isSelectionEmpty()) {
+                int[] indices = archivos.getSelectedIndices();
+                String[] nombreSeleccion = new String[indices.length];
+
+                for (int i = 0; i < indices.length; i++) {
+                    System.out.println("El indice es: " + indices[i]);
+                    nombreSeleccion[i] = modelo.getElementAt(indices[i]);
+                    System.out.println("Nombre: " + nombreSeleccion[i]);
+                }
+
+                Cliente.EliminarArchivo(nombreSeleccion, indices.length);
+
+            } else {
+                JOptionPane.showMessageDialog(null, "Seleccione archivos para eliminarlos.");
+            }
+        }
+        if (b == BtnRenombrar) {
+
+            if (!archivos.isSelectionEmpty()) {
+                int[] indices = archivos.getSelectedIndices();
+                String[] nombreSeleccion = new String[indices.length];
+
+                for (int i = 0; i < indices.length; i++) {
+                    System.out.println("El indice es: " + indices[i]);
+                    nombreSeleccion[i] = modelo.getElementAt(indices[i]);
+                    System.out.println("Nombre: " + nombreSeleccion[i]);
+                }
+
+                Cliente.RenombrarArchivo(nombreSeleccion, indices.length);
+
+            } else {
+                JOptionPane.showMessageDialog(null, "Seleccione archivos para renombrar.");
+            }
+        }
+        if (b == BtnCrearArch) {
+            Cliente.CrearArchivo();
+        }
+        if (b == BtnCrearCarp) {
+            Cliente.CrearCarpeta();
         }
     }
-
-    if(b == BtnEliminar){
-        if (!archivos.isSelectionEmpty()) {
-            int[] indices = archivos.getSelectedIndices();
-            String[] nombreSeleccion = new String[indices.length];
-
-            for (int i = 0; i < indices.length; i++) {
-                System.out.println("El indice es: " + indices[i]);
-                nombreSeleccion[i] = modelo.getElementAt(indices[i]);
-                System.out.println("Nombre: " + nombreSeleccion[i]);
-            }
-
-            Cliente.EliminarArchivo(nombreSeleccion, indices.length);
-
-        } else {
-            JOptionPane.showMessageDialog(null, "Seleccione archivos para eliminarlos.");
-        }
-    }
-    if (b == BtnRenombrar){
-        
-        if (!archivos.isSelectionEmpty()) {
-            int[] indices = archivos.getSelectedIndices();
-            String[] nombreSeleccion = new String[indices.length];
-
-            for (int i = 0; i < indices.length; i++) {
-                System.out.println("El indice es: " + indices[i]);
-                nombreSeleccion[i] = modelo.getElementAt(indices[i]);
-                System.out.println("Nombre: " + nombreSeleccion[i]);
-            }
-
-            Cliente.RenombrarArchivo(nombreSeleccion, indices.length);
-
-        } else {
-            JOptionPane.showMessageDialog(null, "Seleccione archivos para renombrar.");
-        }
-    }
-    if(b == BtnCrearArch){
-        Cliente.CrearArchivo();
-    }
-    if(b == BtnCrearCarp){
-        Cliente.CrearCarpeta();
-    }
-}
-
 
     public static void main(String s[]) {
         Practica1 f = new Practica1();

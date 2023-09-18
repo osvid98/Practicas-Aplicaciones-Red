@@ -349,13 +349,13 @@ public class Servidor {
 
                 int bandera = dis.readInt();
                 System.out.println("BANDERA: " + bandera);
-                
+
                 // 0) Subir un archivo -> El servidor recibe
                 if (bandera == 0) {
                     String nombre = dis.readUTF();
                     RecibirArchivos(dis, nombre);
                 }
-                
+
                 // 1) Subir directorio -> El servidor recibe
                 if (bandera == 1) {
                     String rutaDirectorio = dis.readUTF();
@@ -389,7 +389,7 @@ public class Servidor {
                     numVeces++;
                 }
                 // 3) Crear archivo -> El servidor recibe
-                if (bandera == 3){
+                if (bandera == 3) {
                     CrearArchivo(dis, dos);
                 }
                 // 3) Crear Directorio -> El servidor recibe
@@ -404,23 +404,21 @@ public class Servidor {
                     int tam = dis.readInt();
                     RenombrarArchivo(dis, tam, dos);
                 }
-                
+
                 // 7) Ver archivos / Actualizar -> El servidor envia los nombres de los archivos
                 if (bandera == 7) {
                     rutaActual = "";
                     ActualizarCliente(cl, dis, rutaServer, 0);
                 }
-                
+
                 // 8) Abrir carpeta -> El servidor envia los nombres de los contenidos de la carpeta seleccionada
                 if (bandera == 8) {
                     int ubicacionRuta = dis.readInt();
                     String nuevaRuta = "" + list[ubicacionRuta].getAbsoluteFile();
                     rutaAtualizima = nuevaRuta;
                     ActualizarCliente(cl, dis, nuevaRuta, 1);
-                } 
-                
-                else {
-                    System.out.println("Error al atender la solicitud del cliente.");
+                } else {
+                    System.out.println("Server Esperando Petición: Ninguna Bandera Seleccionada.");
                 }
 
                 dis.close();
