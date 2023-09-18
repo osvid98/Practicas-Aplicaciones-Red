@@ -195,6 +195,23 @@ public class Practica1 extends JFrame implements ActionListener {
         if (b == BtnCrearCarp) {
             Cliente.CrearCarpeta();
         }
+        if (b == BtnCopiar) {
+            if (!archivos.isSelectionEmpty()) {
+                int[] indices = archivos.getSelectedIndices();
+                String[] nombreSeleccion = new String[indices.length];
+
+                for (int i = 0; i < indices.length; i++) {
+                    System.out.println("El indice es: " + indices[i]);
+                    nombreSeleccion[i] = modelo.getElementAt(indices[i]);
+                    System.out.println("Nombre: " + nombreSeleccion[i]);
+                }
+
+                Cliente.CopiarArchivo(nombreSeleccion, indices.length);
+
+            } else {
+                JOptionPane.showMessageDialog(null, "Seleccione archivos para copiar.");
+            }
+        }
     }
 
     public static void main(String s[]) {

@@ -178,7 +178,7 @@ public class Cliente {
             e.printStackTrace();
         }//catch
     }
-    
+
     // 3) CREAR ARCHIVO
     public static void CrearArchivo() {
         try {
@@ -312,7 +312,7 @@ public class Cliente {
             e.printStackTrace();
         }//catch
     }
-    
+
     // 7) ACTUALIZAR (Para actualiza directorio del servidor en la interfaz del cliente)
     public static void Actualizar() {
         try {
@@ -376,4 +376,45 @@ public class Cliente {
             e.printStackTrace();
         }//catch
     }
+
+    // 9) COPIAR ARCHIVO
+    public static void CopiarArchivo(String[] nombresArchivos, int tama) {
+        try {
+            Socket cl = new Socket(host, pto);
+            DataOutputStream dos = new DataOutputStream(cl.getOutputStream()); // OutputStream
+            DataInputStream dis = new DataInputStream(cl.getInputStream()); // InputStream
+
+            // La bandera tiene el valor de 9 = Copiar archivo
+            dos.writeInt(9);
+            dos.flush();
+
+            dos.writeInt(tama);
+            dos.flush();
+
+            // Enviamos los nombres de los archivos seleccionados
+            String aux = "";
+
+            for (int i = 0; i < tama; i++) {
+                aux = nombresArchivos[i];
+                dos.writeUTF(aux);
+                dos.flush();
+
+                String destino = JOptionPane.showInputDialog("Ingrese la ruta de destino para copiar el archivo " + nombresArchivos[i]);
+                dos.writeUTF(destino);
+                dos.flush();
+            }
+
+            JOptionPane.showMessageDialog(null, "Se ha copiado el archivo.");
+            modelo.clear();
+            Actualizar();
+
+            dos.close();
+            dis.close();
+            cl.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 }

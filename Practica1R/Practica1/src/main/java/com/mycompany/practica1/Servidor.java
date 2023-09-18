@@ -333,6 +333,54 @@ public class Servidor {
         }
     } // Crear carpeta
 
+    // 9) COPIAR ARCHIVO
+    public static void CopiarArchivo(DataInputStream dis, int tam, DataOutputStream dos) {
+        try {
+            String[] nombreArchivos = new String[tam];
+            String[] rutasDestino = new String[tam];
+
+            for (int i = 0; i < tam; i++) {
+                nombreArchivos[i] = dis.readUTF();
+                rutasDestino[i] = dis.readUTF();
+            }
+
+            for (int i = 0; i < tam; i++) {
+                String nombreArchivo = nombreArchivos[i];
+                String rutaDestino = rutaServer + rutasDestino[i];
+
+                File archivoOrigen = new File(rutaServer + nombreArchivo);
+                File archivoDestino = new File(rutaDestino + sep + nombreArchivo);
+
+                if (archivoOrigen.exists()) {
+                    if (archivoOrigen.isFile()) {
+                        FileInputStream fis = new FileInputStream(archivoOrigen);
+                        FileOutputStream fos = new FileOutputStream(archivoDestino);
+                        byte[] buffer = new byte[1024];
+                        int length;
+
+                        while ((length = fis.read(buffer)) > 0) {
+                            fos.write(buffer, 0, length);
+                        }
+
+                        fis.close();
+                        fos.close();
+
+                        System.out.println("Archivo " + nombreArchivo + " copiado a " + rutaDestino);
+                    } else {
+                        System.out.println(nombreArchivo + " no es un archivo y no puede copiarse.");
+                    }
+                } else {
+                    System.out.println(nombreArchivo + " no existe en el servidor.");
+                }
+            }
+
+            dos.writeUTF("Archivos copiados correctamente.");
+            dos.flush();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     // MAIN
     public static void main(String[] args) {
         try {
@@ -417,6 +465,11 @@ public class Servidor {
                     String nuevaRuta = "" + list[ubicacionRuta].getAbsoluteFile();
                     rutaAtualizima = nuevaRuta;
                     ActualizarCliente(cl, dis, nuevaRuta, 1);
+                }
+
+                if (bandera == 9) {
+                    int tam = dis.readInt();
+                    CopiarArchivo(dis, tam, dos);
                 } else {
                     System.out.println("Server Esperando Petición: Ninguna Bandera Seleccionada.");
                 }
