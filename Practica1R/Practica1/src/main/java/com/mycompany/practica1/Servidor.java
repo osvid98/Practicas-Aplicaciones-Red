@@ -371,23 +371,7 @@ public class Servidor {
     } // Crear carpeta
 
     // 9) COPIAR ARCHIVO
-    private static void copiarArchivo(File source, File dest) throws IOException {
-        InputStream is = null;
-        OutputStream os = null;
-        try {
-            is = new FileInputStream(source);
-            os = new FileOutputStream(dest);
-            byte[] buffer = new byte[1024];
-            int length;
-            while ((length = is.read(buffer)) > 0) {
-                os.write(buffer, 0, length);
-            }
-        } finally {
-            is.close();
-            os.close();
-        }
-    }
-    public static void CopiarDirectorio(File directorioOrigen, File directorioDestino) throws IOException {
+    public static void copiarArchOrDirec(File directorioOrigen, File directorioDestino) throws IOException {
         if (directorioOrigen.isDirectory()) {
             // Verifica si el directorio de destino no existe; si no, créalo
             if (!directorioDestino.exists()) {
@@ -402,7 +386,7 @@ public class Servidor {
                 File elementoDestino = new File(directorioDestino, elemento);
 
                 // Recursivamente, copia archivos y subdirectorios
-                CopiarDirectorio(elementoOrigen, elementoDestino);
+                copiarArchOrDirec(elementoOrigen, elementoDestino);
             }
         } else {
             // Si es un archivo, copia el archivo
@@ -537,11 +521,7 @@ public class Servidor {
                         File archDest = new File(rutaServer+destino+"/"+concatenarCopia(archivo));
                         
                         if(archOrg.exists()){
-                            if(archOrg.isFile()){
-                               copiarArchivo(archOrg, archDest); 
-                            }else{
-                                CopiarDirectorio(archOrg, archDest);
-                            }
+                            copiarArchOrDirec(archOrg, archDest);
                         }
                     }
                 } else {
