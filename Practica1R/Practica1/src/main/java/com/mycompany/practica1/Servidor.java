@@ -177,6 +177,43 @@ public class Servidor {
         fis.close();
         System.out.println("Archivos comprimidos en un ZIP. Listo para enviar...");
     }
+    
+    private static void unzip(String zipFilePath, String destDir) {
+        File dir = new File(destDir);
+        // create output directory if it doesn't exist
+        if(!dir.exists()) dir.mkdirs();
+        FileInputStream fis;
+        //buffer for read and write data to file
+        byte[] buffer = new byte[1024];
+        try {
+            fis = new FileInputStream(zipFilePath);
+            ZipInputStream zis = new ZipInputStream(fis);
+            ZipEntry ze = zis.getNextEntry();
+            while(ze != null){
+                String fileName = ze.getName();
+                File newFile = new File(destDir + File.separator + fileName);
+                System.out.println("Unzipping to "+newFile.getAbsolutePath());
+                //create directories for sub directories in zip
+                new File(newFile.getParent()).mkdirs();
+                FileOutputStream fos = new FileOutputStream(newFile);
+                int len;
+                while ((len = zis.read(buffer)) > 0) {
+                fos.write(buffer, 0, len);
+                }
+                fos.close();
+                //close this ZipEntry
+                zis.closeEntry();
+                ze = zis.getNextEntry();
+            }
+            //close last ZipEntry
+            zis.closeEntry();
+            zis.close();
+            fis.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        
+    }
 
     // EnviarArchivo
     public static void EnviarArchivo(DataOutputStream dos, File f) {
@@ -334,64 +371,74 @@ public class Servidor {
     } // Crear carpeta
 
     // 9) COPIAR ARCHIVO
-    public static void CopiarArchivo(DataInputStream dis, int tam, DataOutputStream dos) {
+    private static void copiarArchivo(File source, File dest) throws IOException {
+        InputStream is = null;
+        OutputStream os = null;
         try {
-            String[] nombreArchivos = new String[tam];
-            String[] rutasDestino = new String[tam];
-
-            for (int i = 0; i < tam; i++) {
-                nombreArchivos[i] = dis.readUTF();
-                rutasDestino[i] = dis.readUTF();
+            is = new FileInputStream(source);
+            os = new FileOutputStream(dest);
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = is.read(buffer)) > 0) {
+                os.write(buffer, 0, length);
             }
-
-            for (int i = 0; i < tam; i++) {
-                String nombreArchivo = nombreArchivos[i];
-                String rutaDestino = rutaServer + rutasDestino[i];
-                File archivoOrigen = new File(rutaServer + nombreArchivo);
-
-                if (archivoOrigen.exists()) {
-                    if (archivoOrigen.isFile()) {
-                        // Verificar si el archivo de destino ya existe en la ruta
-                        int copiaIndex = 1;
-                        String nuevoNombreArchivo = nombreArchivo;
-                        File archivoDestino = new File(rutaDestino + sep + nuevoNombreArchivo);
-
-                        // Generar un nuevo nombre con el prefijo "Copia" si el archivo ya existe
-                        while (archivoDestino.exists()) {
-                            String nombreSinExtension = nombreArchivo.substring(0, nombreArchivo.lastIndexOf('.'));
-                            String extension = nombreArchivo.substring(nombreArchivo.lastIndexOf('.'));
-                            nuevoNombreArchivo = "Copia" + copiaIndex + "_" + nombreSinExtension + extension;
-                            copiaIndex++;
-                            archivoDestino = new File(rutaDestino + sep + nuevoNombreArchivo);
-                        }
-
-                        // Copiar el archivo con el nuevo nombre
-                        FileInputStream fis = new FileInputStream(archivoOrigen);
-                        FileOutputStream fos = new FileOutputStream(archivoDestino);
-                        byte[] buffer = new byte[1024];
-                        int length;
-
-                        while ((length = fis.read(buffer)) > 0) {
-                            fos.write(buffer, 0, length);
-                        }
-
-                        fis.close();
-                        fos.close();
-
-                        System.out.println("Archivo " + nombreArchivo + " copiado como " + nuevoNombreArchivo + " a " + rutaDestino);
-                    } else {
-                        System.out.println(nombreArchivo + " no es un archivo y no puede copiarse.");
-                    }
-                } else {
-                    System.out.println(nombreArchivo + " no existe en el servidor.");
-                }
-            }
-
-            dos.writeUTF("Archivos copiados correctamente.");
-            dos.flush();
-        } catch (Exception e) {
-            e.printStackTrace();
+        } finally {
+            is.close();
+            os.close();
         }
+    }
+    public static void CopiarDirectorio(File directorioOrigen, File directorioDestino) throws IOException {
+        if (directorioOrigen.isDirectory()) {
+            // Verifica si el directorio de destino no existe; si no, créalo
+            if (!directorioDestino.exists()) {
+                directorioDestino.mkdirs();
+            }
+
+            // Lista todos los archivos y subdirectorios en el directorio de origen
+            String[] elementos = directorioOrigen.list();
+
+            for (String elemento : elementos) {
+                File elementoOrigen = new File(directorioOrigen, elemento);
+                File elementoDestino = new File(directorioDestino, elemento);
+
+                // Recursivamente, copia archivos y subdirectorios
+                CopiarDirectorio(elementoOrigen, elementoDestino);
+            }
+        } else {
+            // Si es un archivo, copia el archivo
+            FileInputStream fis = new FileInputStream(directorioOrigen);
+            FileOutputStream fos = new FileOutputStream(directorioDestino);
+
+            byte[] buffer = new byte[1024];
+            int longitud;
+
+            while ((longitud = fis.read(buffer)) > 0) {
+                fos.write(buffer, 0, longitud);
+            }
+
+            fis.close();
+            fos.close();
+        }
+    }
+    
+    public static String concatenarCopia(String nombreArchivo){
+        int i = nombreArchivo.length() - 1;
+        String extension="";
+        String nombre="";
+        for(;i>0;i--){
+            if(nombreArchivo.charAt(i)=='.'){ break; }
+            extension = nombreArchivo.charAt(i) + extension;
+        }
+        System.out.println("extension: "+extension);
+        if(i==0){ // recorrio todo el nombre y no hay extension, es un directorio
+            return nombreArchivo+"-Copia";
+        }
+        for(int j=0; j<i; j++){
+            nombre += nombreArchivo.charAt(j);
+        }
+        System.out.println("nombre: "+nombre);
+        
+        return nombre+"-Copia."+extension;
     }
 
     // MAIN
@@ -482,7 +529,21 @@ public class Servidor {
 
                 if (bandera == 9) {
                     int tam = dis.readInt();
-                    CopiarArchivo(dis, tam, dos);
+                    for(int i=0; i<tam; i++){
+                        String archivo = dis.readUTF();
+                        String destino = dis.readUTF();
+                        
+                        File archOrg = new File(rutaServer+archivo);
+                        File archDest = new File(rutaServer+destino+"/"+concatenarCopia(archivo));
+                        
+                        if(archOrg.exists()){
+                            if(archOrg.isFile()){
+                               copiarArchivo(archOrg, archDest); 
+                            }else{
+                                CopiarDirectorio(archOrg, archDest);
+                            }
+                        }
+                    }
                 } else {
                     System.out.println("Server Esperando Petición: Ninguna Bandera Seleccionada.");
                 }
