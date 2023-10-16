@@ -1,6 +1,6 @@
-package com.mycompany.practica1;
+package Practica2;
 
-import static com.mycompany.practica1.Practica1.modelo;
+import static Practica2.Practica2.modelo;
 import javax.swing.JFileChooser;
 import java.io.*;
 import java.net.*;
@@ -35,7 +35,7 @@ public class Cliente {
                 long finish = System.currentTimeMillis();
                 long timeElapsed = finish - start;
                 System.out.println("Se tardo "+timeElapsed+"ms");
-                Practica1.modelo.clear();
+                Practica2.modelo.clear();
                 Actualizar();
             }//if   
         } catch (Exception e) {
@@ -334,7 +334,7 @@ public class Cliente {
 
             for (int i = 0; i < numArchivos; i++) {
                 String archivoRecibido = dis.readUTF();
-                Practica1.modelo.addElement(archivoRecibido);
+                Practica2.modelo.addElement(archivoRecibido);
                 tipoFile[i] = dis.readInt();
             }//for
 
@@ -368,7 +368,7 @@ public class Cliente {
 
             for (int i = 0; i < numArchivos; i++) {
                 String archivoRecibido = dis.readUTF(); // Leemos el nombre del archivo
-                Practica1.modelo.addElement(archivoRecibido); // Agregamos el nombre del archivo al modelo de la lista en el cliente
+                Practica2.modelo.addElement(archivoRecibido); // Agregamos el nombre del archivo al modelo de la lista en el cliente
                 tipoFile[i] = dis.readInt(); // Leemos el tipo del archivo y lo almacenamos en el arreglo de tipos
             }//for
 
