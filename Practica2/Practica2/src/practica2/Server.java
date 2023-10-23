@@ -47,6 +47,7 @@ public class Server {
 
             if (partsReceived[partNumber]) {
                 dis.close();
+                sendConfirmation(socket, packet.getAddress(), packet.getPort(), partNumber); // Envía confirmación si el paquete se recibió previamente
                 continue;
             }
 
@@ -55,11 +56,13 @@ public class Server {
             byte[] data = new byte[partSize];
             dis.read(data);
 
-            System.out.println("Se recibio paquete de datagrama: #" + partNumber + " con " + partSize + " bytes");
+            System.out.println("Se recibio el paquete de datagrama: #" + (partNumber+1) + " con " + partSize + " bytes");
 
             for (int i = start; i < end; i++) {
                 totalBytes[i] = data[i - start];
             }
+
+            sendConfirmation(socket, packet.getAddress(), packet.getPort(), partNumber); // Envía confirmación del paquete recibido
 
             boolean complete = true;
             for (boolean received : partsReceived) {
@@ -74,8 +77,19 @@ public class Server {
 
                 return;
             }
-
-            dis.close();
         }
+    }
+
+    // Método para enviar una confirmación al cliente
+    private static void sendConfirmation(DatagramSocket socket, InetAddress clientAddress, int clientPort, int partNumber)
+            throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(baos);
+
+        dos.writeInt(partNumber);
+
+        byte[] confirmationData = baos.toByteArray();
+        DatagramPacket confirmationPacket = new DatagramPacket(confirmationData, confirmationData.length, clientAddress, clientPort);
+        socket.send(confirmationPacket);
     }
 }

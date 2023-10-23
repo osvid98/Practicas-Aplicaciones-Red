@@ -58,7 +58,7 @@ public class Client {
                 // Enviar cada parte al servidor
                 sendPartToServer(clientSocket, fileName, fileSize, totalParts, i, start, end, partData);
                 
-                System.out.println("Enviado paquete datagrama #" + i + " - Size: " + partData.length + " bytes");
+                System.out.println("Enviado paquete datagrama #" + (i+1) + " - Size: " + partData.length + " bytes");
             }
         }
     }
@@ -83,6 +83,37 @@ public class Client {
         DatagramPacket packet = new DatagramPacket(datagramData, datagramData.length, serverAddress, SERVER_PORT);
         socket.send(packet);
 
-        System.out.println("Sent packet " + partNumber);
+        // Envío del paquete con confirmación
+        boolean packetReceived = false;
+        int maxRetries = 3;
+        int retries = 0;
+
+        while (!packetReceived && retries < maxRetries) {
+            try {
+                socket.send(packet);
+                System.out.println("Tratando de enviar paquete " + (partNumber+1));
+
+                // Esperar la confirmación del servidor
+                socket.setSoTimeout(5000);  // Esperar 5 segundos para la confirmación
+                byte[] confirmationData = new byte[DATAGRAM_SIZE];
+                DatagramPacket confirmationPacket = new DatagramPacket(confirmationData, DATAGRAM_SIZE);
+                socket.receive(confirmationPacket);
+
+                // Comprobar si la confirmación es para el paquete actual
+                DataInputStream confirmationStream = new DataInputStream(new ByteArrayInputStream(confirmationData));
+                int confirmedPartNumber = confirmationStream.readInt();
+                if (confirmedPartNumber == partNumber) {
+                    packetReceived = true;
+                }
+            } catch (SocketTimeoutException e) {
+                System.out.println("Timeout waiting for confirmation, retrying...");
+                retries++;
+            }
+        }
+
+        if (!packetReceived) {
+            System.err.println("Fallo la confirmacion de paquete " + partNumber);
+            // Aquí puedes decidir cómo manejar el paquete no confirmado, como reenviarlo nuevamente.
+        }
     }
 }
