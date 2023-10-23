@@ -1,106 +1,88 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-package practica2;
-
 import java.io.*;
 import java.net.*;
-import java.util.*;
 import javax.swing.JFileChooser;
 
 public class Client {
 
+    private static final int DATAGRAM_SIZE = 65248;
+    private static final int SERVER_PORT = 5555;
+
     public static void main(String[] args) {
         try {
-
-            // opening the file: 
-//            String path = "C:\\Users\\sergi\\Desktop\\escom\\septimo\\redes\\DatagramFiles\\src\\datagramfiles\\INE_Sergio_Demian_Acuayte.pdf";
-//            File initialFile = new File(path);
-            JFileChooser jf = new JFileChooser(".");
-            jf.setMultiSelectionEnabled(false);
-            jf.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            int res = jf.showOpenDialog(null);
-            File initialFile = null;
-
-            if (res == JFileChooser.APPROVE_OPTION) {
-                initialFile = jf.getSelectedFile();
+            // Seleccionar un archivo para enviar
+            File selectedFile = chooseFile();
+            if (selectedFile == null) {
+                System.out.println("No se selecciono un archivo");
+                return;
             }
-            String fileName = initialFile.getName();
-            int size = (int) initialFile.length();
-            FileInputStream fis = new FileInputStream(initialFile);
-            byte[] fBytes = new byte[(int) initialFile.length()];
-            fis.read(fBytes);
+            
+            System.out.println("Archivo Seleccionado: " + selectedFile.getAbsolutePath());
 
-            // geting the size of each part:
-            /*
-            DATAGRAM STRUCTUTRE:
-            name        260 max 
-            size        8
-            totalParts  8
-            currPart    8
-            data        rest -> 65251 sizeOfEachPart
-             */
-            int sizeOfEachPart = 65248;
-            int totalParts = size / sizeOfEachPart + 1;
-
-            // Streams for byte and data
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            DataOutputStream dos = new DataOutputStream(baos);
-            // Socket:
-            DatagramSocket cl = new DatagramSocket(8888);
-            System.out.println("Size : " + size);
-            System.out.println("Total parts : " + totalParts);
-
-            for (;;) {
-                for (int i = 0; i < totalParts; i++) {
-                    // GETTING A COPY OF A PART OF THE BYTE ARRAY:
-                    int l = (int) (i * sizeOfEachPart);
-                    int r;
-                    if (i + 1 == totalParts) {
-                        r = size;
-                    } else {
-                        r = (int) ((i * sizeOfEachPart) + (sizeOfEachPart));
-                    }
-                    System.out.println("l: " + l);
-                    System.out.println("r: " + r);
-                    System.out.println(fileName);
-                    byte[] btmp;
-                    if (i + 1 == totalParts) {
-                        System.out.println("r: " + r);
-                        btmp = Arrays.copyOfRange(fBytes, (int) (i * sizeOfEachPart), (int) size);
-                    } else {
-                        btmp = Arrays.copyOfRange(fBytes, (int) (i * sizeOfEachPart), (int) ((i * sizeOfEachPart) + (sizeOfEachPart)));
-                    }
-                    byte[] fileNameBytes = fileName.getBytes();
-                    dos.writeInt(fileNameBytes.length);
-                    dos.write(fileNameBytes);
-                    dos.writeInt(size);
-                    dos.writeInt(totalParts);
-                    dos.writeInt(i); //SENDIG i
-                    dos.writeInt(l);
-                    dos.writeInt(r);
-                    System.out.println("Enviando el paquete " + i);
-                    dos.write(btmp); //SENDING THE PART 
-                    dos.flush(); // SENDING TO THE STREAM dos -> baos
-
-                    byte[] b = baos.toByteArray(); // GETTING THE BYTE OF THE DATAGRAM
-                    //System.out.println("Tam del dato: "+b.length); 2 int + 22 -> int = 4 bytes
-                    //cl.setBroadcast(true);
-                    InetAddress dir = InetAddress.getByName("127.0.0.1");
-                    //InetAddress dir = InetAddress.getByName("192.168.10.199");
-                    System.out.println("leng of the byte in datagram : " + b.length);
-                    DatagramPacket p = new DatagramPacket(b, b.length, dir, 5555); // CREATING THE DATAGRAM
-                    cl.send(p); // SENDING THE DATAGRAM THROUGH THE SOCKET
-                    System.out.println("mensaje enviado..");
-                    baos.reset();
-                }
-            }//for
-//            dos.close();
-//            cl.close();
-        } catch (Exception e) {
+            // Enviar el archivo al servidor
+            sendFileToServer(selectedFile);
+        } catch (IOException e) {
             e.printStackTrace();
         }
-    
+    }
+
+    // Método para elegir un archivo utilizando JFileChooser
+    private static File chooseFile() {
+        JFileChooser fileChooser = new JFileChooser(".");
+        fileChooser.setMultiSelectionEnabled(false);
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+
+        if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+            return fileChooser.getSelectedFile();
+        }
+
+        return null;
+    }
+
+    // Método para enviar un archivo al servidor
+    private static void sendFileToServer(File file) throws IOException {
+        try (FileInputStream fis = new FileInputStream(file);
+             DatagramSocket clientSocket = new DatagramSocket()) {
+
+            String fileName = file.getName();
+            int fileSize = (int) file.length();
+            int sizeOfEachPart = DATAGRAM_SIZE;
+            int totalParts = (fileSize / sizeOfEachPart) + 1;
+
+            for (int i = 0; i < totalParts; i++) {
+                int start = i * sizeOfEachPart;
+                int end = Math.min(start + sizeOfEachPart, fileSize);
+
+                byte[] partData = new byte[end - start];
+                fis.read(partData);
+
+                // Enviar cada parte al servidor
+                sendPartToServer(clientSocket, fileName, fileSize, totalParts, i, start, end, partData);
+                
+                System.out.println("Enviado paquete datagrama #" + i + " - Size: " + partData.length + " bytes");
+            }
+        }
+    }
+
+    // Método para enviar una parte del archivo al servidor
+    private static void sendPartToServer(DatagramSocket socket, String fileName, int fileSize, int totalParts,
+                                         int partNumber, int start, int end, byte[] data) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(baos);
+
+        dos.writeInt(fileName.length());
+        dos.write(fileName.getBytes());
+        dos.writeInt(fileSize);
+        dos.writeInt(totalParts);
+        dos.writeInt(partNumber);
+        dos.writeInt(start);
+        dos.writeInt(end);
+        dos.write(data);
+
+        byte[] datagramData = baos.toByteArray();
+        InetAddress serverAddress = InetAddress.getByName("127.0.0.1");
+        DatagramPacket packet = new DatagramPacket(datagramData, datagramData.length, serverAddress, SERVER_PORT);
+        socket.send(packet);
+
+        System.out.println("Sent packet " + partNumber);
     }
 }
