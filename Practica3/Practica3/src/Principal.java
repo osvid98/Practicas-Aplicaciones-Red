@@ -4,6 +4,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import javax.swing.SwingUtilities;
 
 class Envia extends Thread {
 
@@ -34,6 +35,26 @@ class Envia extends Thread {
             e.printStackTrace();
         }//catch
 
+    }
+    
+    public void enviarMsg(String mensaje, String destinatario){
+        try{
+            String dir = "231.1.1.1";
+            String dir6 = "ff3e::1234:1";
+            int pto = 1234;
+            InetAddress gpo = InetAddress.getByName(dir);
+            if(destinatario.equals("gpo")){
+                mensaje = "<msj>"+"<"+nombreUsuario+">"+mensaje;
+            }else{
+                mensaje = "<priv><"+nombreUsuario+"><"+destinatario+">"+mensaje;
+            }
+            byte[] b = mensaje.getBytes();
+            DatagramPacket p = new DatagramPacket(b, b.length, gpo, pto);
+            socket.send(p);
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+        
     }
 
     public void run() {
@@ -125,24 +146,35 @@ class Recibe extends Thread {
                 }
                 // Convertir ArrayList a array
                 String[] msgs = partesSinVacias.toArray(new String[0]);
-
+                String msgFinal = "";
                 
                 if(msgs.length==2){ // INICIO
                     if(msgs[0].equals("inicio")){
-                        System.out.println("(info) "+msgs[1]+" ha entrado al chat");
+                        msgFinal = "(info) "+msgs[1]+" ha entrado al chat";
+                        contexto.agregarMsg("admin", msgFinal, "gpo");
                         contexto.addParticipante(msgs[1]);
                     }else if(msgs[0].equals("fin")){
-                        System.out.println("(info) "+msgs[1]+" ha salido del chat");
+                        msgFinal = "(info) "+msgs[1]+" ha salido del chat";
+                        contexto.agregarMsg("admin", msgFinal, "gpo");
                         contexto.rmParticipante(msgs[1]);
                     }  
                 }else if(msgs.length==3){ // msg grupal
-                    System.out.println("(gpo) "+msgs[1]+": "+msgs[2]);
+                    msgFinal = msgs[2];
+                    contexto.agregarMsg(msgs[1], msgFinal, "gpo");
                 }else if(msgs.length==4){ // msg privado
                     //System.out.println(msgs[1]+" a "+msgs[2]+": "+msgs[3]);
                     //System.out.println(nombreUsuario);
-                    if(msgs[2].equals(nombreUsuario)){
-                        System.out.println("(priv)"+msgs[1]+": "+msgs[3]);
+                    
+                    if(nombreUsuario.equals(msgs[1])){ // yo lo envie 
+                        msgFinal = msgs[3];
+                        contexto.agregarMsg(nombreUsuario, msgFinal, msgs[2]);
+                    }else if(nombreUsuario.equals(msgs[2])){ // es para mi
+                        msgFinal = msgs[3];
+                        contexto.agregarMsg(msgs[1], msgFinal, msgs[1]);
                     }
+                        
+                        
+                    
                 }else if(msgs.length==5){
                     if(msgs[2].equals(nombreUsuario)){
                         String[] participantes = msgs[4].split(",");
@@ -169,6 +201,7 @@ class Recibe extends Thread {
 
 public class Principal {
     private static ArrayList<String> participantes;
+    private static ChatGUI chatGUI;
     
     // Métodos synchronized para garantizar la consistencia en la manipulación de datos compartidos
     public synchronized ArrayList<String> getParticipantes() {
@@ -177,10 +210,16 @@ public class Principal {
 
     public synchronized void addParticipante(String value) {
         participantes.add(value);
+        SwingUtilities.invokeLater(() -> chatGUI.addUser(value));
     }
     
     public synchronized void rmParticipante(String value) {
         participantes.remove(value);
+        SwingUtilities.invokeLater(() -> chatGUI.removeUser(value));
+    }
+    
+    public synchronized void agregarMsg(String sender, String message, String recipient){
+        SwingUtilities.invokeLater(() -> chatGUI.displayMessage(sender, message, recipient));
     }
 
     static void despliegaInfoNIC(NetworkInterface netint) throws SocketException {
@@ -217,6 +256,8 @@ public class Principal {
             System.out.println("Proporciona un nombre de usuario: ");
             String nombreUsuario = br.readLine();
             // System.out.println("Tu nombre de usuario es "+nombreUsuario);
+            chatGUI = new ChatGUI(nombreUsuario);
+            chatGUI.addUser("gpo");
 
             MulticastSocket m = new MulticastSocket(pto);
             m.setReuseAddress(true);
@@ -238,6 +279,7 @@ public class Principal {
             Recibe r = new Recibe(m, nombreUsuario, contexto);
             Envia e = new Envia(m, br, nombreUsuario, contexto);
             e.setPriority(10);
+            chatGUI.setEnviar(e);
             r.start();
             e.start();
             r.join();
